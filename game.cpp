@@ -67,7 +67,7 @@ const char NUM[9] = {'1', '2', '3', '4', '5', '6', '7', '8'};
 char* color(int,int);
 void draw(Piece [SQR_QTD][SQR_QTD]);
 void printTitle(int, char **);
-bool canMove(Move, Piece [SQR_QTD][SQR_QTD], bool);
+bool canMove(Move, Piece [SQR_QTD][SQR_QTD], bool, int &);
 bool move(Move, Piece [SQR_QTD][SQR_QTD], bool);
 bool menu(Piece [SQR_QTD][SQR_QTD], char **);
 void start(Piece [SQR_QTD][SQR_QTD], char **, bool, bool);
@@ -218,60 +218,74 @@ void start(Piece pieces[SQR_QTD][SQR_QTD], char **names, bool player, bool save)
         }
 
         error = false;
-        cout << "Vez do jogador " << (movetime ? names[0] : names[1]) << ", digite um movimento." << endl;
-        fgets(strmove, 8, stdin);
 
-        Move movectr;    
+        if(strcmp("CPU", names[1]) == 0 && !movetime){
+            //Computer move
+            cout << "Vez do computador." << endl;
 
-        if(strcmp("salvar\n", strmove) == 0){
-            
-            printTitle(7, names);
-            saveArchive(pieces, names, player, names[3]);
+            Move movectr = findMove(pieces);
 
-        }else if(strcmp("sair\n", strmove) == 0){            
-            break;
-            return;
-        }else{
-            
-            
-            for(int i = 0; i < 5; i++){
-                if(error){
-                    break;
-                }
-                int c = strmove[i];
-        
-                if(((c >= 65 && c <= 72) || (c >= 97 && c <= 104)) && i == 0 || i == 3){
-                    if(c >= 97){
-                        c -= 97; 
-                    }else if(c >= 65){
-                        c -= 65;
-                    }
-
-                    if(i == 0){
-                        movectr.initialY = c;
-                    }else{ 
-                        movectr.finalY = c;
-                    }
-                }else if((c >= 48 && c <= 56) && i == 1 || i == 4){
-                    c -= 49;
-
-                    if(i == 1){
-                        movectr.initialX = c;
-                    }else{
-                        movectr.finalX = c;
-                    }
-                }else if(c == 32){
-                    
-                }else{
-                    error = true;
-                }
+            cout << "Move: " << movectr.initialY << "," << movectr.initialX << " to " << movectr.finalY << "," << movectr.finalX << endl;
+            if(move(movectr, pieces, movetime)){
+                movetime = !movetime;
+            }else{
+                cout << "Erro em mover a peça do computador." << endl;  
             }
 
-            if(!error){ 
-                if(move(movectr, pieces, movetime)){
-                    movetime = !movetime;
-                }else{
-                    error = true;
+        }else{
+            cout << "Vez do jogador " << (movetime ? names[0] : names[1]) << ", digite um movimento." << endl;
+            fgets(strmove, 8, stdin);
+
+            Move movectr;    
+
+            if(strcmp("salvar\n", strmove) == 0){
+                
+                printTitle(7, names);
+                saveArchive(pieces, names, player, names[3]);
+
+            }else if(strcmp("sair\n", strmove) == 0){            
+                break;
+                return;
+            }else{
+                for(int i = 0; i < 5; i++){
+                    if(error){
+                        break;
+                    }
+                    int c = strmove[i];
+            
+                    if(((c >= 65 && c <= 72) || (c >= 97 && c <= 104)) && i == 0 || i == 3){
+                        if(c >= 97){
+                            c -= 97; 
+                        }else if(c >= 65){
+                            c -= 65;
+                        }
+
+                        if(i == 0){
+                            movectr.initialY = c;
+                        }else{ 
+                            movectr.finalY = c;
+                        }
+                    }else if((c >= 48 && c <= 56) && i == 1 || i == 4){
+                        c -= 49;
+
+                        if(i == 1){
+                            movectr.initialX = c;
+                        }else{
+                            movectr.finalX = c;
+                        }
+                    }else if(c == 32){
+                        
+                    }else{
+                        error = true;
+                    }
+                }
+
+                if(!error){ 
+                    if(move(movectr, pieces, movetime)){
+                        movetime = !movetime;
+                    }else{
+                        error = true;
+                    }
                 }
             }
         }
@@ -439,13 +453,17 @@ char* color(int y, int x){
  *  Declaração da função que gera o valor booleano para um determinado
  *  movimento descrito pela variável move.
  */
-bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
+bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player, int &eat){
 
     Piece piece = pieces[move.initialY][move.initialX];
     Piece finalPiece = pieces[move.finalY][move.finalX];
 
     //Se a peça final tiver dono, o movimento é inválido.
     if(finalPiece.owner != -1){
+        return false;
+    }
+
+    if(piece.owner == -1){
         return false;
     }
 
@@ -467,14 +485,16 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
                     int ty = move.finalY - move.initialY;
                     int tx = move.finalX - move.initialX;
 
-                    int yy = ((ty < 1) ? move.initialY - 1 : move.initialY + 1);
+                    int yy = ((ty < 1) ? move.initialY - 1 : move.initialY + 1);   
                     int xx = ((tx < 1) ? move.initialX - 1 : move.initialX + 1);
 
                     Piece eaten = pieces[yy][xx];
-
-                    if((eaten.owner == (piece.owner == 1 ? 0 : 1)) && piece.value != 1){
+                                      
+                    if(eaten.owner != piece.owner && eaten.owner != -1 && (abs(i) == abs(j))){
+                        eat += 1;
+                        cout << "Move +1: " << move.initialY << "," << move.initialX << " to " << move.finalY << "," << move.finalX << endl;
                         return true;
-                    }else if(i == 1 || i == -1){
+                    }else if((ty == 1 || ty == -1) && (tx == 1 || tx == -1)){
                         return true;
                     }
                 }
@@ -495,7 +515,12 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
 
                 if(move.initialX + i == move.finalX && move.initialY + j == move.finalY){
                     
+                    if(eaten.owner == -1){
+                        return false;
+                    }
+
                     if((eaten.owner == (piece.owner == 1 ? 0 : 1))){
+                        eat += 1;
                         return true;
                     }else if(abs(i) == abs(j)){
                         return true;
@@ -510,6 +535,7 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
 
 Move findMove(Piece pieces[SQR_QTD][SQR_QTD]){
     Move *moves = new Move[SQR_QTD * SQR_QTD];
+    int *eats = new int[SQR_QTD * SQR_QTD];
     Move find;
 
     int k = 0;
@@ -523,8 +549,10 @@ Move findMove(Piece pieces[SQR_QTD][SQR_QTD]){
                 find.finalY = y;
                 for(int x = 0; x < SQR_QTD; x++){
                     find.finalX = x;
+                    int eat = 0;
 
-                    if(canMove(find, pieces, false)){
+                    if(canMove(find, pieces, false, eat)){
+                        eats[k] = eat;
                         moves[k++] = find;
                     }
                 }
@@ -532,13 +560,25 @@ Move findMove(Piece pieces[SQR_QTD][SQR_QTD]){
         }
     }
 
-    //Checar quem come mais (lei da maioria)
+    int max = 0;
+    for(int i = 0; i < k; i++){
+        Move movectr = moves[i];
+        if(eats[i] >= max){
+            find = movectr;
+            cout << "Move FIND: " << movectr.initialY << "," << movectr.initialX << " to " << movectr.finalY << "," << movectr.finalX << endl;
+            cout << "EAT: " << eats[i] << endl;
+            max = eats[i];
+        }
+    }
 
-    return moves[0];
+    delete[] eats;
+    delete[] moves;
+    return find;
 }
 
 bool move(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
-    if(canMove(move, pieces, player)){
+    int eat = 0;
+    if(canMove(move, pieces, player, eat)){
         Piece piece = pieces[move.initialY][move.initialX];
 
         if(piece.value == 1){
