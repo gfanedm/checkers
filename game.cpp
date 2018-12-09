@@ -75,6 +75,7 @@ bool readArchive(fstream &, Piece [SQR_QTD][SQR_QTD], char **);
 int checkWin(Piece [SQR_QTD][SQR_QTD]);
 char convertValue(Piece);
 bool saveArchive(Piece [SQR_QTD][SQR_QTD], char **, bool, char *);
+Move findMove(Piece [SQR_QTD][SQR_QTD]);
 
 /*
  *  Declaração da função principal, ela cria as variaveis na qual o
@@ -507,8 +508,36 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
     return false;
 }
 
-bool move(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
+Move findMove(Piece pieces[SQR_QTD][SQR_QTD]){
+    Move *moves = new Move[SQR_QTD * SQR_QTD];
+    Move find;
 
+    int k = 0;
+
+    for(int i = 0; i < SQR_QTD; i++){
+        find.initialY = i;
+        for(int j = 0; j < SQR_QTD; j++){
+            find.initialX = j;
+
+            for(int y = 0; y < SQR_QTD; y++){
+                find.finalY = y;
+                for(int x = 0; x < SQR_QTD; x++){
+                    find.finalX = x;
+
+                    if(canMove(find, pieces, false)){
+                        moves[k++] = find;
+                    }
+                }
+            }
+        }
+    }
+
+    //Checar quem come mais (lei da maioria)
+
+    return moves[0];
+}
+
+bool move(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player){
     if(canMove(move, pieces, player)){
         Piece piece = pieces[move.initialY][move.initialX];
 
@@ -609,7 +638,7 @@ void draw(Piece pieces[SQR_QTD][SQR_QTD]){
                     continue;
                 }
 
-                char *color = piece.owner == 1 ? BACK_WHITE : BACK_BLACK;
+                const char *color = piece.owner == 1 ? BACK_WHITE : BACK_BLACK;
 
                 //Mostrando a peça de acordo com seu dono.
                 cout << color << LIGHT_BLUE << (piece.value == 1 ? "D" : " ") << RESET;
