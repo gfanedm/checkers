@@ -296,7 +296,7 @@ void start(Piece pieces[SQR_QTD][SQR_QTD], char **names, bool player, bool save)
                     int c = strmove[i];
 
                     //Checa se o inteiro está entre os caracteres aceitos.
-                    if(((c >= 65 && c <= 72) || (c >= 97 && c <= 104)) && i == 0 || i == 3){
+                    if(((c >= 65 && c <= 72) || (c >= 97 && c <= 104)) && (i == 0 || i == 3)){
                         
                         //Define o inteiro com o valor do movimento.
                         if(c >= 97){
@@ -313,7 +313,7 @@ void start(Piece pieces[SQR_QTD][SQR_QTD], char **names, bool player, bool save)
                         }
                     
                     //Checa se o inteiro está entre os caractéres numéricos aceitos.
-                    }else if((c >= 48 && c <= 56) && i == 1 || i == 4){
+                    }else if((c >= 48 && c <= 56) && (i == 1 || i == 4)){
                         
                         //Define o inteiro com o valor do movimento.
                         c -= 49;
@@ -353,15 +353,6 @@ void start(Piece pieces[SQR_QTD][SQR_QTD], char **names, bool player, bool save)
     //Se houver a vitória, mostra ao jogador a parabenização.
     if(win){
         printTitle((winint == 1 ? 5 : 6), names);
-        int tchar = names[3][0];
-
-        if(tchar == 1){
-            //Jogar dnv
-        }else if(tchar == 2){
-            //Sair
-        }else{
-            
-        }
     }
 }
 
@@ -501,7 +492,6 @@ bool readArchive(fstream &file, Piece pieces[SQR_QTD][SQR_QTD], char **names){
 
         //Leitura das peças.
         for(int j = 0; j < n; j++){
-            Piece piece = pieces[i][j];
 
             switch (strpieces[j]){
                 case '-':
@@ -618,8 +608,8 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player, int &eat){
                     int tx = move.finalX - move.initialX;
                     
                     //Definindo as variáveis da peça que pode ser comida.
-                    int yy = ((ty < 1) ? move.initialY - 1 : move.initialY + 1);   
-                    int xx = ((tx < 1) ? move.initialX - 1 : move.initialX + 1);
+                    int yy = ((ty < 0) ? move.initialY + ty : move.initialY - ty);
+                    int xx = ((tx < 0) ? move.initialX - tx : move.initialX + tx);
 
                     //Definição da variável da peça comida.
                     Piece eaten = pieces[yy][xx];
@@ -660,7 +650,7 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player, int &eat){
                 int tx = move.finalX - move.initialX;
 
                 //Definindo as variáveis da peça que pode ser comida.
-                int yy = ((ty < 0) ? move.initialY + ty : move.initialY + ty) + 1;
+                int yy = ((ty < 0) ? move.initialY + ty : move.initialY - ty);
                 int xx = ((tx < 0) ? move.initialX - tx : move.initialX + tx) - 1;
 
                 //Definição da variável da peça comida.
@@ -668,13 +658,12 @@ bool canMove(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player, int &eat){
 
                 //Checando se o movimento é equivalente ao final.
                 if(move.initialX + i == move.finalX && move.initialY + j == move.finalY){
-                    
-                    if(eaten.owner == -1){
-                        return false;
-                    }
 
                     //Checando se a peça pode ser comida e por quem.
                     if((eaten.owner == (piece.owner == 1 ? 0 : 1))){
+                        if(eaten.owner == -1){
+                            return false;
+                        }
                         eat += 1;
                         return true;
                     }else if(abs(i) == abs(j)){
@@ -774,8 +763,8 @@ bool move(Move move, Piece pieces[SQR_QTD][SQR_QTD], bool player, int points[2])
                         int ty = move.finalY - move.initialY;
                         int tx = move.finalX - move.initialX;
 
-                        int yy = ((ty < 0) ? move.initialY + ty : move.initialY + ty) + 1;
-                        int xx = ((tx < 0) ? move.initialX - tx : move.initialX + tx) - 1;
+                        int yy = ((ty < 0) ? move.initialY + ty : move.initialY - ty);
+                        int xx = ((tx < 0) ? move.initialX - tx : move.initialX + tx);
 
                         Piece eaten = pieces[yy][xx];
 
@@ -948,14 +937,6 @@ void printTitle(int opt, char **names){
         cout << ch << "       PARABENS!! "<< endl;
         cout << "      O jogador " << (opt == 5 ? names[0] : names[1]) << " foi o ganhador da partida."<< endl;
         cout << endl;
-        cout << ch << "Deseja jogar novamente:" << endl;
-        cout << ch << "1 - Sim" << endl;
-        cout << ch << "2 - Não" << endl;
-        cout << ch << "> ";
-
-        int opt;
-        cin >> opt;
-        names[3][0] = opt;
     }else if(opt == 7){
         cout << ch << "Digite o nome do arquivo :" << endl;
         cout << ch << "> "; 
