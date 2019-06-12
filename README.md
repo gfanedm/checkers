@@ -18,4 +18,5 @@ Compile in linux:
 $ g++ game.cpp -o game
 ```
 
->This is a pratical work from a college discipline, you can only use this for private projects.
+>This is a practical work from a college discipline, you can only use this in private projects.
+>[Website of the discipline](http://www.decom.ufop.br/decom/ensino/disciplina/bcc201/2018-2)
